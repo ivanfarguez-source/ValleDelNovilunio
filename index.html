@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>Valle del Novilunio - Modo Inmersivo</title>
+    <title>Valle del Novilunio - Zoom Centrado</title>
     <style>
         html, body {
             margin: 0;
@@ -15,7 +15,7 @@
             font-family: 'Georgia', serif;
         }
 
-        /* Contenedor principal */
+        /* Contenedor principal de scroll */
         .map-wrapper {
             position: relative;
             width: 100vw;
@@ -25,13 +25,13 @@
             background-color: #1a1510;
         }
 
-        /* Contenedor interno para el zoom */
+        /* Contenedor interno con el origen del zoom al CENTRO */
         .map-container {
             position: relative;
             width: 100%;
             height: auto;
-            transform-origin: top left; 
-            transition: transform 0.2s ease; 
+            transform-origin: center center; /* ¡Clave para que el zoom sea centrado! */
+            transition: transform 0.25s ease;
         }
 
         .map-container img {
@@ -93,7 +93,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* CONTENEDOR DE CONTROLES DERECHOS (ZOOM Y PANTALLA COMPLETA) */
+        /* CONTENEDOR DE CONTROLES DERECHOS */
         .side-controls {
             position: fixed;
             top: 70px;
@@ -234,16 +234,16 @@
     <button class="leyenda-btn" onclick="abrirLeyenda()">📜 Leyenda</button>
 
     <div class="side-controls">
-        <button class="control-btn" onclick="cambiarZoom(0.2)">+</button>
-        <button class="control-btn" onclick="cambiarZoom(-0.2)">−</button>
+        <button class="control-btn" onclick="hacerZoomIn(0.4)">+</button>
+        <button class="control-btn" title="Ajustar Pantalla" onclick="restablecerVista()">🔄</button>
         <button class="control-btn" id="fullscreen-btn" onclick="alternarPantallaCompleta()">📱</button>
     </div>
 
     <div class="map-wrapper" id="map-wrapper">
         <div class="map-container" id="map-container">
-            <img src="mapa.png" alt="Valle del Novilunio">
+            <img src="MAPA.png" alt="Valle del Novilunio">
 
-            <div id="spot-1" class="hotspot" style="left: 44.5%; top: 41.5%;" role="button" onclick="abrirPopUp('1. Plaza Mayor', 'El corazón del pueblo. Un lugar ideal para observar quién entra y sale.')"></div>
+            <div id="spot-1" class="hotspot" style="left: 44.5%; top: 46.9%;" role="button" onclick="abrirPopUp('1. Plaza Mayor', 'El corazón del pueblo. Un lugar ideal para observar quién entra y sale.')"></div>
             <div id="spot-2" class="hotspot" style="left: 43.2%; top: 34.2%;" role="button" onclick="abrirPopUp('2. Ayuntamiento', 'El archivo municipal guarda documentos de 1996 que nadie quiere que salgan a la luz.')"></div>
             <div id="spot-3" class="hotspot" style="left: 35.5%; top: 32.5%;" role="button" onclick="abrirPopUp('3. Iglesia de Santa Ana', 'La vieja parroquia del pueblo. El párroco esconde algo bajo el altar...')"></div>
             <div id="spot-4" class="hotspot" style="left: 15.2%; top: 40.8%;" role="button" onclick="abrirPopUp('4. Instituto Sierra del Novilunio', 'Donde los jóvenes estudian y los secretos locales se heredan de clase en clase.')"></div>
@@ -275,38 +275,56 @@
     <script>
         let nivelZoom = 1.0;
         const maxZoom = 3.0;
-        const minZoom = 1.0;
 
-        function cambiarZoom(valor) {
+        function hacerZoomIn(valor) {
+            if (nivelZoom >= maxZoom) return;
+
+            const wrapper = document.getElementById('map-wrapper');
+            const contenedor = document.getElementById('map-container');
+
+            // 1. Guardamos el centro actual de lo que ve el usuario en pantalla
+            const centroX = wrapper.scrollLeft + (wrapper.clientWidth / 2);
+            const centroY = wrapper.scrollTop + (wrapper.clientHeight / 2);
+
+            // Guardamos el zoom anterior
+            const antiguoZoom = nivelZoom;
+
+            // 2. Incrementamos el nivel de zoom
             nivelZoom += valor;
             if (nivelZoom > maxZoom) nivelZoom = maxZoom;
-            if (nivelZoom < minZoom) nivelZoom = minZoom;
-            
-            const contenedor = document.getElementById('map-container');
+
+            // 3. Aplicamos la nueva escala al mapa
             contenedor.style.transform = `scale(${nivelZoom})`;
             contenedor.style.width = `${100 * nivelZoom}%`;
+
+            // 4. Corregimos el scroll para mantener exactamente el mismo centro
+            const factorRedimension = nivelZoom / antiguoZoom;
+            
+            wrapper.scrollLeft = (centroX * factorRedimension) - (wrapper.clientWidth / 2);
+            wrapper.scrollTop = (centroY * factorRedimension) - (wrapper.clientHeight / 2);
         }
 
-        // FUNCIÓN MÁGICA PARA PANTALLA COMPLETA TOTAL
+        function restablecerVista() {
+            nivelZoom = 1.0;
+            const contenedor = document.getElementById('map-container');
+            contenedor.style.transform = `scale(1)`;
+            contenedor.style.width = `100%`;
+            
+            const wrapper = document.getElementById('map-wrapper');
+            wrapper.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        }
+
         function alternarPantallaCompleta() {
-            const doc = document.documentElement; // Selecciona toda la página web
+            const doc = document.documentElement;
             const boton = document.getElementById('fullscreen-btn');
 
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                // Entrar en modo pantalla completa (Soporte para Chrome, Safari y Firefox móvil)
-                if (doc.requestFullscreen) {
-                    doc.requestFullscreen();
-                } else if (doc.webkitRequestFullscreen) { 
-                    doc.webkitRequestFullscreen();
-                }
-                boton.innerText = "✖"; // Cambia el icono para poder salir
+                if (doc.requestFullscreen) { doc.requestFullscreen(); } 
+                else if (doc.webkitRequestFullscreen) { doc.webkitRequestFullscreen(); }
+                boton.innerText = "✖";
             } else {
-                // Salir del modo pantalla completa
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) {
-                    document.webkitExitFullscreen();
-                }
+                if (document.exitFullscreen) { document.exitFullscreen(); } 
+                else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
                 boton.innerText = "📱";
             }
         }
@@ -323,16 +341,22 @@
 
         function enfocarLugar(idSpot) {
             document.getElementById('leyenda-overlay').classList.remove('active');
+            
+            // Si está en vista general, le aplicamos el zoom idóneo
             if (nivelZoom === 1.0) {
-                cambiarZoom(0.6); 
+                nivelZoom = 1.6;
+                const contenedor = document.getElementById('map-container');
+                contenedor.style.transform = `scale(${nivelZoom})`;
+                contenedor.style.width = `${100 * nivelZoom}%`;
             }
+            
             const spot = document.getElementById(idSpot);
             if (spot) {
                 setTimeout(() => {
                     spot.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
                     spot.classList.add('destello');
                     setTimeout(() => spot.classList.remove('destello'), 3000);
-                }, 100);
+                }, 150);
             }
         }
     </script>
