@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
+    <title>Valle del Novilunio - Pantalla Completa con Leyenda</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1a1510;
+            overflow: hidden; 
+            font-family: 'Georgia', serif;
+        }
+
+        /* Contenedor del mapa a pantalla completa */
+        .map-wrapper {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: auto; 
+            display: block; /* Cambiado a block para facilitar el scroll automático */
+        }
+
+        .map-wrapper img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Puntos interactivos invisibles por defecto */
+        .hotspot {
+            position: absolute;
+            width: 6%;  
+            height: 6%; 
+            border-radius: 50%;
+            background: rgba(212, 178, 133, 0.4); 
+            border: 2px solid #fff;
+            cursor: pointer;
+            transform: translate(-50%, -50%); 
+            opacity: 0; 
+            transition: opacity 0.3s ease;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent; 
+            z-index: 10;
+        }
+
+        /* EFECTO DESTELLO DORADO (Animación cuando se selecciona desde la lista) */
+        .hotspot.destello {
+            opacity: 1 !important;
+            background: rgba(212, 178, 133, 0.6) !important;
+            border-color: #d4b285 !important;
+            box-shadow: 0 0 20px #d4b285, 0 0 40px #d4b285;
+            animation: parpadeo 0.5s ease infinite alternate;
+        }
+
+        @keyframes parpadeo {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            100% { transform: translate(-50%, -50%) scale(1.4); }
+        }
+
+        /* BOTÓN FLOTANTE DE LEYENDA */
+        .leyenda-btn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: #2a221a;
+            color: #d4b285;
+            border: 2px solid #d4b285;
+            padding: 8px 16px;
+            font-family: 'Georgia', serif;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            z-index: 50;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* PANTALLAS EMERGENTES (MODALES) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-box {
+            background: #2a221a;
+            border: 3px solid #d4b285;
+            border-radius: 10px;
+            width: 85%;
+            max-width: 450px;
+            max-height: 80vh;
+            padding: 25px;
+            box-sizing: border-box;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-overlay.active .modal-box {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            color: #d4b285;
+            font-size: 1.4rem;
+            margin-top: 0;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #3a2f21;
+            padding-bottom: 8px;
+        }
+
+        /* Contenedor de la lista con scroll independiente */
+        .lista-lugares {
+            overflow-y: auto;
+            text-align: left;
+            margin-bottom: 15px;
+            padding-right: 5px;
+        }
+
+        .categoria-titulo {
+            color: #d4b285;
+            font-size: 1rem;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            border-bottom: 1px dashed #3a2f21;
+        }
+
+        .lugar-item {
+            padding: 8px 5px;
+            color: #e5d4bc;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .lugar-item:active {
+            background: rgba(212, 178, 133, 0.2);
+            color: #fff;
+        }
+
+        .modal-desc {
+            color: #e5d4bc;
+            font-size: 1.05rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .close-btn {
+            background: #d4b285;
+            color: #1a1510;
+            border: none;
+            padding: 10px 24px;
+            font-family: 'Georgia', serif;
+            font-weight: bold;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Botón flotante para abrir la Leyenda -->
+    <button class="leyenda-btn" onclick="abrirLeyenda()">📜 Leyenda</button>
+
+    <div class="map-wrapper" id="map-container">
+        <img src="mapa.png" alt="Valle del Novilunio">
+
+        <!-- Agregamos IDs únicos a los hotspots para poder localizarlos desde el código -->
+        <div id="spot-1" class="hotspot" style="left: 44.5%; top: 41.5%;" role="button" onclick="abrirPopUp('1. Plaza Mayor', 'El corazón del pueblo. Un lugar ideal para observar quién entra y sale.')"></div>
+        <div id="spot-2" class="hotspot" style="left: 43.2%; top: 34.2%;" role="button" onclick="abrirPopUp('2. Ayuntamiento', 'El archivo municipal guarda documentos de 1996 que nadie quiere que salgan a la luz.')"></div>
+        <div id="spot-3" class="hotspot" style="left: 35.5%; top: 32.5%;" role="button" onclick="abrirPopUp('3. Iglesia de Santa Ana', 'La vieja parroquia del pueblo. El párroco esconde algo bajo el altar...')"></div>
+        <div id="spot-4" class="hotspot" style="left: 15.2%; top: 40.8%;" role="button" onclick="abrirPopUp('4. Instituto Sierra del Novilunio', 'Donde los jóvenes estudian y los secretos locales se heredan de clase en clase.')"></div>
+    </div>
+
+    <!-- PANTALLA EMERGENTE 1: LA LEYENDA COMPLETA -->
+    <div class="modal-overlay" id="leyenda-overlay" onclick="cerrarLeyenda(event)">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <h2 class="modal-title">Lugares de Interés</h2>
+            
+            <div class="lista-lugares">
+                <div class="categoria-titulo">EDIFICIOS PÚBLICOS</div>
+                <!-- Al pulsar, llama a enfocarLugar(id_del_punto) -->
+                <div class="lugar-item" onclick="enfocarLugar('spot-1')">1. Plaza Mayor</div>
+                <div class="lugar-item" onclick="enfocarLugar('spot-2')">2. Ayuntamiento</div>
+                <div class="lugar-item" onclick="enfocarLugar('spot-3')">3. Iglesia de Santa Ana</div>
+                <div class="lugar-item" onclick="enfocarLugar('spot-4')">4. Instituto Sierra del Novilunio</div>
+                
+                <div class="categoria-titulo">VIVIENDAS</div>
+                <!-- Aquí irás listando tus viviendas poco a poco, ciela -->
+                <div class="lugar-item" onclick="alert('Próximamente configurado')">31. Casa de Daniel Romero</div>
+            </div>
+
+            <button class="close-btn" onclick="document.getElementById('leyenda-overlay').classList.remove('active')">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- PANTALLA EMERGENTE 2: INFO DEL EDIFICIO -->
+    <div class="modal-overlay" id="popup-overlay" onclick="document.getElementById('popup-overlay').classList.remove('active')">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <h2 class="modal-title" id="popup-titulo">Título</h2>
+            <p class="modal-desc" id="popup-descripcion">Descripción...</p>
+            <button class="close-btn" onclick="document.getElementById('popup-overlay').classList.remove('active')">Volver al mapa</button>
+        </div>
+    </div>
+
+    <script>
+        // Abre el menú de la leyenda
+        function abrirLeyenda() {
+            document.getElementById('leyenda-overlay').classList.add('active');
+        }
+
+        // Cierra la leyenda si tocas fuera
+        function cerrarLeyenda(event) {
+            if (event.target === document.getElementById('leyenda-overlay')) {
+                document.getElementById('leyenda-overlay').classList.remove('active');
+            }
+        }
+
+        // Abre el pop-up informativo de cada edificio
+        function abrirPopUp(titulo, descripcion) {
+            document.getElementById('popup-titulo').innerText = titulo;
+            document.getElementById('popup-descripcion').innerText = descripcion;
+            document.getElementById('popup-overlay').classList.add('active');
+        }
+
+        // Función mágica para buscar e iluminar el edificio desde la lista
+        function enfocarLugar(idSpot) {
+            // 1. Cerramos el menú de la leyenda
+            document.getElementById('leyenda-overlay').classList.remove('active');
+            
+            // 2. Localizamos el circulito correspondiente
+            const spot = document.getElementById(idSpot);
+            const container = document.getElementById('map-container');
+            
+            if (spot && container) {
+                // 3. Hacemos scroll suave automático hasta la posición del edificio
+                spot.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                
+                // 4. Le añadimos la clase del destello dorado animado
+                spot.classList.add('destello');
+                
+                // 5. Quitamos el destello automáticamente a los 3 segundos
+                setTimeout(() => {
+                    spot.classList.remove('destello');
+                }, 3000);
+            }
+        }
+    </script>
+
+</body>
+</html>
