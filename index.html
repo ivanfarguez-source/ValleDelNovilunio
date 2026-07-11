@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
-    <title>Valle del Novilunio - Interactividad Total</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Valle del Novilunio - Modo Inmersivo</title>
     <style>
         html, body {
             margin: 0;
@@ -15,46 +15,53 @@
             font-family: 'Georgia', serif;
         }
 
-        /* Contenedor del mapa a pantalla completa */
+        /* Contenedor principal */
         .map-wrapper {
             position: relative;
             width: 100vw;
             height: 100vh;
             overflow: auto; 
             display: block;
+            background-color: #1a1510;
         }
 
-        .map-wrapper img {
+        /* Contenedor interno para el zoom */
+        .map-container {
+            position: relative;
+            width: 100%;
+            height: auto;
+            transform-origin: top left; 
+            transition: transform 0.2s ease; 
+        }
+
+        .map-container img {
             width: 100%;
             height: auto;
             display: block;
         }
 
-        /* PUNTOS INTERACTIVOS MEJORADOS */
+        /* PUNTOS INTERACTIVOS */
         .hotspot {
             position: absolute;
             width: 6%;  
             height: 6%; 
             border-radius: 50%;
-            background: rgba(212, 178, 133, 0); /* Totalmente invisible al principio */
-            border: 2px solid transparent;      /* Sin borde visible al principio */
+            background: rgba(212, 178, 133, 0); 
+            border: 2px solid transparent;      
             cursor: pointer;
             transform: translate(-50%, -50%); 
-            opacity: 1; /* Mantenemos la opacidad base alta */
             transition: background 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent; 
-            z-index: 10; /* Asegura que estén SIEMPRE por encima de la imagen */
+            z-index: 10; 
         }
 
-        /* EFECTO HOVER: Al pasar el ratón por encima se ilumina suavemente */
         .hotspot:hover {
             background: rgba(212, 178, 133, 0.3); 
             border-color: rgba(255, 255, 255, 0.7);
             transform: translate(-50%, -50%) scale(1.1);
         }
 
-        /* EFECTO DESTELLO DORADO (Cuando se selecciona desde la lista) */
         .hotspot.destello {
             background: rgba(212, 178, 133, 0.6) !important;
             border-color: #d4b285 !important;
@@ -86,7 +93,40 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* PANTALLAS EMERGENTES CORREGIDAS (pointer-events: none evita que bloqueen el mapa) */
+        /* CONTENEDOR DE CONTROLES DERECHOS (ZOOM Y PANTALLA COMPLETA) */
+        .side-controls {
+            position: fixed;
+            top: 70px;
+            right: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 50;
+        }
+
+        .control-btn {
+            background: #2a221a;
+            color: #d4b285;
+            border: 2px solid #d4b285;
+            width: 42px;
+            height: 42px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .control-btn:active {
+            background: #d4b285;
+            color: #1a1510;
+        }
+
+        /* PANTALLAS EMERGENTES */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -98,15 +138,11 @@
             justify-content: center;
             align-items: center;
             z-index: 100;
-            
-            /* ¡ESTA ES LA CLAVE, REINA! */
             opacity: 0;
-            pointer-events: none; /* Hace la capa invisible "fantasma" para que deje hacer clic abajo */
-            
+            pointer-events: none; 
             transition: opacity 0.3s ease;
         }
 
-        /* Al estar activa, la capa vuelve a recibir clics normalmente */
         .modal-overlay.active {
             opacity: 1;
             pointer-events: auto;
@@ -197,19 +233,26 @@
 
     <button class="leyenda-btn" onclick="abrirLeyenda()">📜 Leyenda</button>
 
-    <div class="map-wrapper" id="map-container">
-        <img src="mapa.png" alt="Valle del Novilunio">
+    <div class="side-controls">
+        <button class="control-btn" onclick="cambiarZoom(0.2)">+</button>
+        <button class="control-btn" onclick="cambiarZoom(-0.2)">−</button>
+        <button class="control-btn" id="fullscreen-btn" onclick="alternarPantallaCompleta()">📱</button>
+    </div>
 
-        <div id="spot-1" class="hotspot" style="left: 44.5%; top: 41.5%;" role="button" onclick="abrirPopUp('1. Plaza Mayor', 'El corazón del pueblo. Un lugar ideal para observar quién entra y sale.')"></div>
-        <div id="spot-2" class="hotspot" style="left: 43.2%; top: 34.2%;" role="button" onclick="abrirPopUp('2. Ayuntamiento', 'El archivo municipal guarda documentos de 1996 que nadie quiere que salgan a la luz.')"></div>
-        <div id="spot-3" class="hotspot" style="left: 35.5%; top: 32.5%;" role="button" onclick="abrirPopUp('3. Iglesia de Santa Ana', 'La vieja parroquia del pueblo. El párroco esconde algo bajo el altar...')"></div>
-        <div id="spot-4" class="hotspot" style="left: 15.2%; top: 40.8%;" role="button" onclick="abrirPopUp('4. Instituto Sierra del Novilunio', 'Donde los jóvenes estudian y los secretos locales se heredan de clase en clase.')"></div>
+    <div class="map-wrapper" id="map-wrapper">
+        <div class="map-container" id="map-container">
+            <img src="mapa.png" alt="Valle del Novilunio">
+
+            <div id="spot-1" class="hotspot" style="left: 44.5%; top: 41.5%;" role="button" onclick="abrirPopUp('1. Plaza Mayor', 'El corazón del pueblo. Un lugar ideal para observar quién entra y sale.')"></div>
+            <div id="spot-2" class="hotspot" style="left: 43.2%; top: 34.2%;" role="button" onclick="abrirPopUp('2. Ayuntamiento', 'El archivo municipal guarda documentos de 1996 que nadie quiere que salgan a la luz.')"></div>
+            <div id="spot-3" class="hotspot" style="left: 35.5%; top: 32.5%;" role="button" onclick="abrirPopUp('3. Iglesia de Santa Ana', 'La vieja parroquia del pueblo. El párroco esconde algo bajo el altar...')"></div>
+            <div id="spot-4" class="hotspot" style="left: 15.2%; top: 40.8%;" role="button" onclick="abrirPopUp('4. Instituto Sierra del Novilunio', 'Donde los jóvenes estudian y los secretos locales se heredan de clase en clase.')"></div>
+        </div>
     </div>
 
     <div class="modal-overlay" id="leyenda-overlay" onclick="document.getElementById('leyenda-overlay').classList.remove('active')">
         <div class="modal-box" onclick="event.stopPropagation()">
             <h2 class="modal-title">Lugares de Interés</h2>
-            
             <div class="lista-lugares">
                 <div class="categoria-titulo">EDIFICIOS PÚBLICOS</div>
                 <div class="lugar-item" onclick="enfocarLugar('spot-1')">1. Plaza Mayor</div>
@@ -217,7 +260,6 @@
                 <div class="lugar-item" onclick="enfocarLugar('spot-3')">3. Iglesia de Santa Ana</div>
                 <div class="lugar-item" onclick="enfocarLugar('spot-4')">4. Instituto Sierra del Novilunio</div>
             </div>
-
             <button class="close-btn" onclick="document.getElementById('leyenda-overlay').classList.remove('active')">Cerrar</button>
         </div>
     </div>
@@ -231,6 +273,44 @@
     </div>
 
     <script>
+        let nivelZoom = 1.0;
+        const maxZoom = 3.0;
+        const minZoom = 1.0;
+
+        function cambiarZoom(valor) {
+            nivelZoom += valor;
+            if (nivelZoom > maxZoom) nivelZoom = maxZoom;
+            if (nivelZoom < minZoom) nivelZoom = minZoom;
+            
+            const contenedor = document.getElementById('map-container');
+            contenedor.style.transform = `scale(${nivelZoom})`;
+            contenedor.style.width = `${100 * nivelZoom}%`;
+        }
+
+        // FUNCIÓN MÁGICA PARA PANTALLA COMPLETA TOTAL
+        function alternarPantallaCompleta() {
+            const doc = document.documentElement; // Selecciona toda la página web
+            const boton = document.getElementById('fullscreen-btn');
+
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                // Entrar en modo pantalla completa (Soporte para Chrome, Safari y Firefox móvil)
+                if (doc.requestFullscreen) {
+                    doc.requestFullscreen();
+                } else if (doc.webkitRequestFullscreen) { 
+                    doc.webkitRequestFullscreen();
+                }
+                boton.innerText = "✖"; // Cambia el icono para poder salir
+            } else {
+                // Salir del modo pantalla completa
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+                boton.innerText = "📱";
+            }
+        }
+
         function abrirLeyenda() {
             document.getElementById('leyenda-overlay').classList.add('active');
         }
@@ -243,18 +323,16 @@
 
         function enfocarLugar(idSpot) {
             document.getElementById('leyenda-overlay').classList.remove('active');
-            
+            if (nivelZoom === 1.0) {
+                cambiarZoom(0.6); 
+            }
             const spot = document.getElementById(idSpot);
-            const container = document.getElementById('map-container');
-            
-            if (spot && container) {
-                spot.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-                
-                spot.classList.add('destello');
-                
+            if (spot) {
                 setTimeout(() => {
-                    spot.classList.remove('destello');
-                }, 3000);
+                    spot.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                    spot.classList.add('destello');
+                    setTimeout(() => spot.classList.remove('destello'), 3000);
+                }, 100);
             }
         }
     </script>
