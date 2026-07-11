@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>Valle del Novilunio - Navegación Libre</title>
+    <title>Valle del Novilunio - Leyenda Clasificada</title>
     <style>
         html, body {
             margin: 0;
@@ -24,7 +24,6 @@
             display: block;
             background-color: #1a1510;
             z-index: 1;
-            /* Suaviza el arrastre con el dedo en dispositivos iOS */
             -webkit-overflow-scrolling: touch; 
         }
 
@@ -33,9 +32,8 @@
             position: relative;
             width: 100%;
             height: auto;
-            transform-origin: center center;
+            transform-origin: 0 0; 
             transition: transform 0.1s ease-out; 
-            /* ¡CORREGIDO, CIELA! Permite arrastrar el mapa con los dedos en cualquier dirección */
             touch-action: pan-x pan-y; 
             z-index: 2;
         }
@@ -51,8 +49,8 @@
         /* PUNTOS INTERACTIVOS */
         .hotspot {
             position: absolute;
-            width: 3%;  
-            height: 5%; 
+            width: 6%;  
+            height: 6%; 
             border-radius: 50%;
             background: rgba(212, 178, 133, 0); 
             border: 2px solid transparent;      
@@ -82,7 +80,7 @@
             100% { transform: translate(-50%, -50%) scale(1.4); }
         }
 
-        /* INTERFAZ FIJA */
+        /* INTERFAZ FIJA CON Z-INDEX MÁXIMO */
         .leyenda-btn {
             position: fixed; 
             top: 15px;
@@ -159,10 +157,10 @@
             background: #2a221a;
             border: 3px solid #d4b285;
             border-radius: 10px;
-            width: 85%;
-            max-width: 450px;
-            max-height: 80vh;
-            padding: 25px;
+            width: 90%;
+            max-width: 480px;
+            max-height: 85vh;
+            padding: 20px;
             box-sizing: border-box;
             text-align: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
@@ -178,36 +176,80 @@
 
         .modal-title {
             color: #d4b285;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             margin-top: 0;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
             border-bottom: 1px solid #3a2f21;
             padding-bottom: 8px;
         }
 
+        /* DISEÑO DE LAS PESTAÑAS (TABS), CIELA */
+        .tabs-container {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3a2f21;
+            overflow-x: auto; /* Permite scroll horizontal si las pestañas no caben en móviles */
+            padding-bottom: 5px;
+            scrollbar-width: none; /* Oculta barra en Firefox */
+        }
+        .tabs-container::-webkit-scrollbar {
+            display: none; /* Oculta barra en Chrome/Safari */
+        }
+
+        .tab-btn {
+            background: #1a1510;
+            color: #a48b6c;
+            border: 1px solid #3a2f21;
+            border-bottom: none;
+            padding: 8px 12px;
+            font-family: 'Georgia', serif;
+            font-size: 0.85rem;
+            font-weight: bold;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            white-space: nowrap; /* Evita que el texto se rompa en dos líneas */
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: #d4b285;
+            color: #1a1510;
+            border-color: #d4b285;
+        }
+
+        /* CONTENEDORES DE CONTENIDO POR CATEGORÍA */
         .lista-lugares {
             overflow-y: auto;
             text-align: left;
             margin-bottom: 15px;
             padding-right: 5px;
+            flex-grow: 1;
+            min-height: 200px;
+            max-height: 45vh;
         }
 
-        .categoria-titulo {
-            color: #d4b285;
-            font-size: 1rem;
-            margin-top: 15px;
-            margin-bottom: 5px;
-            border-bottom: 1px dashed #3a2f21;
+        .tab-content {
+            display: none; /* Ocultas por defecto */
+        }
+
+        .tab-content.active {
+            display: block; /* Solo se muestra la pestaña activa */
         }
 
         .lugar-item {
-            padding: 8px 5px;
+            padding: 10px 8px;
             color: #e5d4bc;
             cursor: pointer;
             border-radius: 4px;
             font-size: 0.95rem;
+            border-bottom: 1px solid #3a2f21;
             transition: background 0.2s;
             -webkit-tap-highlight-color: transparent;
+        }
+
+        .lugar-item:last-child {
+            border-bottom: none;
         }
 
         .lugar-item:active, .lugar-item:hover {
@@ -238,7 +280,7 @@
 </head>
 <body>
 
-    <button class="leyenda-btn" onclick="abrirLeyenda()">📜 Leyenda</button>
+    <button class="leyenda-btn" onclick="abrirLeyenda()">🗺️ Leyenda</button>
 
     <div class="side-controls">
         <button class="control-btn" onclick="hacerZoomIn(0.4)">+</button>
@@ -246,31 +288,55 @@
         <button class="control-btn" id="fullscreen-btn" onclick="alternarPantallaCompleta()">📱</button>
     </div>
 
-    <div class="map-wrapper" id="map-wrapper">
+   <div class="map-wrapper" id="map-wrapper">
         <div class="map-container" id="map-container">
             <img src="mapa.jpeg" alt="Valle del Novilunio">
 
-            <div id="spot-1" class="hotspot" style="left: 39.8%; top: 57.5%;" role="button" onclick="abrirPopUp('1. Plaza Mayor', 'El corazón del pueblo. Un lugar ideal para observar quién entra y sale.')"></div>
-            <div id="spot-2" class="hotspot" style="left: 40.2%; top: 47.2%;" role="button" onclick="abrirPopUp('2. Ayuntamiento', 'El archivo municipal guarda documentos de 1996 que nadie quiere que salgan a la luz.')"></div>
-            <div id="spot-3" class="hotspot" style="left: 46.5%; top: 34.5%;" role="button" onclick="abrirPopUp('3. Iglesia de Santa Ana', 'La vieja parroquia del pueblo. El párroco esconde algo bajo el altar...')"></div>
-            <div id="spot-4" class="hotspot" style="left: 15.2%; top: 48.8%;" role="button" onclick="abrirPopUp('4. Instituto Sierra del Novilunio', 'Donde los jóvenes estudian y los secretos locales se heredan de clase en clase.')"></div>
-			<div id="spot-5" class="hotspot" style="left: 21.2%; top: 53.8%;" role="button" onclick="abrirPopUp('5. Colegio Bellavista', 'Donde los jóvenes estudian y los secretos locales se heredan de clase en clase.')"></div>
-			<div id="spot-6" class="hotspot" style="left: 50.5%; top: 39.5%;" role="button" onclick="abrirPopUp('6. Plaza de la Iglesia', '')"></div>
+            <div id="spot-1" class="hotspot" style="left: 39.8%; top: 57.5%;" role="button" onclick="abrirPopUp('🌳 Plaza Mayor', 'El corazón del pueblo. Un lugar ideal para observar quién entra y sale.')"></div>
+            <div id="spot-2" class="hotspot" style="left: 40.2%; top: 47.2%;" role="button" onclick="abrirPopUp('🏛️ Ayuntamiento', 'El archivo municipal guarda documentos de 1996 que nadie quiere que salgan a la luz.')"></div>
+            <div id="spot-3" class="hotspot" style="left: 46.5%; top: 34.5%;" role="button" onclick="abrirPopUp('⛪ Iglesia de Santa Ana', 'La vieja parroquia del pueblo. El párroco esconde algo bajo el altar...')"></div>
+            <div id="spot-4" class="hotspot" style="left: 17.2%; top: 48.8%;" role="button" onclick="abrirPopUp('📐 Instituto Sierra del Novilunio', 'Donde los jóvenes estudian y los secretos locales se heredan de clase en clase.')"></div>
+			<div id="spot-5" class="hotspot" style="left: 21.2%; top: 53.8%;" role="button" onclick="abrirPopUp('📚 Colegio Bellavista', 'Donde los jóvenes estudian y los secretos locales se heredan de clase en clase.')"></div>
+			<div id="spot-6" class="hotspot" style="left: 50.5%; top: 39.5%;" role="button" onclick="abrirPopUp('🌳 Plaza los Cuatro Vientos', '')"></div>
         </div>
     </div>
 
     <div class="modal-overlay" id="leyenda-overlay" onclick="document.getElementById('leyenda-overlay').classList.remove('active')">
         <div class="modal-box" onclick="event.stopPropagation()">
             <h2 class="modal-title">Lugares de Interés</h2>
-            <div class="lista-lugares">
-                <div class="categoria-titulo">EDIFICIOS PÚBLICOS</div>
-                <div class="lugar-item" onclick="enfocarLugar('spot-1')">1. Plaza Mayor</div>
-                <div class="lugar-item" onclick="enfocarLugar('spot-2')">2. Ayuntamiento</div>
-                <div class="lugar-item" onclick="enfocarLugar('spot-3')">3. Iglesia de Santa Ana</div>
-                <div class="lugar-item" onclick="enfocarLugar('spot-4')">4. Instituto Sierra del Novilunio</div>
-				<div class="lugar-item" onclick="enfocarLugar('spot-5')">4. Colegio Bellavista</div>
-				<div class="lugar-item" onclick="enfocarLugar('spot-6')">5. Plaza de la Iglesia</div>
+            
+            <div class="tabs-container">
+                <button class="tab-btn active" onclick="cambiarPestana(event, 'tab-publicos')">🏛️ Públicos</button>
+                <button class="tab-btn" onclick="cambiarPestana(event, 'tab-servicios')">🛡️ Servicios</button>
+                <button class="tab-btn" onclick="cambiarPestana(event, 'tab-viviendas')">🏠 Viviendas</button>
+                <button class="tab-btn" onclick="cambiarPestana(event, 'tab-plazas')">🌳 Plazas</button>
             </div>
+
+            <div class="lista-lugares">
+                
+                <div id="tab-publicos" class="tab-content active">
+                    <div class="lugar-item" onclick="enfocarLugar('spot-2')">🏛️ Ayuntamiento</div>
+                    <div class="lugar-item" onclick="enfocarLugar('spot-3')">⛪ Iglesia de Santa Ana</div>
+                    <div class="lugar-item" onclick="enfocarLugar('spot-4')">📐 Instituto Sierra del Novilunio</div>
+					<div class="lugar-item" onclick="enfocarLugar('spot-5')">📚 Colegio Bellavista</div>
+                </div>
+
+                <div id="tab-servicios" class="tab-content">
+                    <div class="lugar-item" onclick="alert('Aquí puedes enlazar tu spot del cuartel, cariño')">📍 Cuartel de la Guardia Civil (Ejemplo)</div>
+                    <div class="lugar-item" onclick="alert('Aquí enlazas el centro médico')">📍 Centro de Salud (Ejemplo)</div>
+                </div>
+
+                <div id="tab-viviendas" class="tab-content">
+                    <div class="lugar-item" onclick="alert('Aquí enlazas la casa del sospechoso')">📍 Casa de la familia Alvear (Ejemplo)</div>
+                </div>
+
+                <div id="tab-plazas" class="tab-content">
+                    <div class="lugar-item" onclick="enfocarLugar('spot-1')">🌳 Plaza Mayor</div>
+					<div class="lugar-item" onclick="enfocarLugar('spot-1')">🌳 Plaza los Cuatro Vientos</div>
+                </div>
+
+            </div>
+            
             <button class="close-btn" onclick="document.getElementById('leyenda-overlay').classList.remove('active')">Cerrar</button>
         </div>
     </div>
@@ -295,7 +361,22 @@
         let zoomOriginalAlTocar = 1.0;
         let estaPellizcando = false;
 
-        // MANEJO TÁCTIL (ZOOM CON DOS DEDOS)
+        // FUNCIÓN NUEVA: INTERCAMBIAR PESTAÑAS, CIELA
+        function cambiarPestana(evento, idTab) {
+            // Ocultar todos los contenidos de pestañas
+            const contenidos = document.querySelectorAll('.tab-content');
+            contenidos.forEach(c => c.classList.remove('active'));
+
+            // Desactivar todos los botones de pestañas
+            const botones = document.querySelectorAll('.tab-btn');
+            botones.forEach(b => b.classList.remove('active'));
+
+            // Activar la pestaña actual y su botón correspondiente
+            document.getElementById(idTab).classList.add('active');
+            evento.currentTarget.classList.add('active');
+        }
+
+        // ZOOM TÁCTIL (CON DOS DEDOS)
         wrapper.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
                 estaPellizcando = true;
@@ -308,7 +389,6 @@
         }, { passive: true });
 
         wrapper.addEventListener('touchmove', (e) => {
-            // Si el usuario usa un solo dedo, no hacemos nada aquí para dejar que el scroll nativo mueva el mapa libremente
             if (estaPellizcando && e.touches.length === 2) {
                 const nuevaDistancia = Math.hypot(
                     e.touches[0].pageX - e.touches[1].pageX,
@@ -327,7 +407,6 @@
 
                     nivelZoom = nuevoZoom;
                     
-                    // Aplicamos cambios de tamaño reales para que se pueda arrastrar
                     aplicarEscalaMapa();
 
                     const factorRedimension = nivelZoom / antiguoZoom;
@@ -341,15 +420,12 @@
             if (e.touches.length < 2) { estaPellizcando = false; }
         });
 
-        // FUNCIÓN CENTRAL PARA APLICAR EL TAMAÑO
         function aplicarEscalaMapa() {
             contenedor.style.transform = `scale(${nivelZoom})`;
             contenedor.style.width = `${100 * nivelZoom}%`;
-            // Forzamos al contenedor a ocupar altura real para permitir scroll vertical libre
-            contenedor.style.height = 'auto'; 
+            contenedor.style.height = `${100 * nivelZoom}%`; 
         }
 
-        // BOTÓN ZOOM IN (+)
         function hacerZoomIn(valor) {
             if (nivelZoom >= maxZoom) return;
             const centroX = wrapper.scrollLeft + (wrapper.clientWidth / 2);
@@ -366,15 +442,14 @@
             wrapper.scrollTop = (centroY * factorRedimension) - (wrapper.clientHeight / 2);
         }
 
-        // BOTÓN RESTABLECER (🔄)
         function restablecerVista() {
             nivelZoom = 1.0;
             contenedor.style.transform = `scale(1)`;
             contenedor.style.width = `100%`;
+            contenedor.style.height = `auto`;
             wrapper.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
         }
 
-        // MODO INMERSIVO (📱)
         function alternarPantallaCompleta() {
             const doc = document.documentElement;
             const boton = document.getElementById('fullscreen-btn');
@@ -401,6 +476,8 @@
         }
 
         function enfocarLugar(idSpot) {
+            restablecerVista(); 
+            
             document.getElementById('leyenda-overlay').classList.remove('active');
             
             if (nivelZoom === 1.0) {
