@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>Valle del Novilunio - Centrado Perfecto</title>
+    <title>Valle del Novilunio - Botones Fijos</title>
     <style>
         html, body {
             margin: 0;
@@ -23,6 +23,7 @@
             overflow: auto; 
             display: block;
             background-color: #1a1510;
+            z-index: 1; /* Nivel base */
         }
 
         /* Contenedor interno del mapa */
@@ -33,6 +34,7 @@
             transform-origin: center center;
             transition: transform 0.1s ease-out; 
             touch-action: none; 
+            z-index: 2; /* Por encima del fondo */
         }
 
         .map-container img {
@@ -77,9 +79,9 @@
             100% { transform: translate(-50%, -50%) scale(1.4); }
         }
 
-        /* BOTÓN FLOTANTE DE LEYENDA */
+        /* ¡INTERFAZ BLINDADA CON Z-INDEX MÁXIMO, CIELA! */
         .leyenda-btn {
-            position: fixed;
+            position: fixed; /* Flota sobre la pantalla global, no sobre el mapa */
             top: 15px;
             right: 15px;
             background: #2a221a;
@@ -91,20 +93,19 @@
             font-weight: bold;
             border-radius: 20px;
             cursor: pointer;
-            z-index: 50;
+            z-index: 9999 !important; /* Capa superior absoluta por encima de cualquier zoom */
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* CONTENEDOR DE CONTROLES DERECHOS */
         .side-controls {
-            position: fixed;
+            position: fixed; /* Totalmente anclado a la pantalla */
             top: 70px;
             right: 15px;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            z-index: 50;
+            z-index: 9999 !important; /* Impide que el mapa al crecer tape los botones */
         }
 
         .control-btn {
@@ -140,7 +141,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 100;
+            z-index: 10000; /* Por encima de los botones */
             opacity: 0;
             pointer-events: none; 
             transition: opacity 0.3s ease;
@@ -383,12 +384,9 @@
             document.getElementById('popup-overlay').classList.add('active');
         }
 
-        // FUNCIÓN MEJORADA: ENFOCAR Y CENTRAR EL EDIFICIO PERFECTAMENTE
         function enfocarLugar(idSpot) {
-            // 1. Cerramos el menú de la leyenda
             document.getElementById('leyenda-overlay').classList.remove('active');
             
-            // 2. Si está en vista general alejada, aplicamos un zoom cómodo para ver los detalles
             if (nivelZoom === 1.0) {
                 nivelZoom = 1.6;
                 contenedor.style.transform = `scale(${nivelZoom})`;
@@ -397,24 +395,19 @@
             
             const spot = document.getElementById(idSpot);
             if (spot) {
-                // Le damos una micra de tiempo para que se asiente el tamaño del mapa antes de mover el scroll
                 setTimeout(() => {
-                    // Calculamos la posición del círculo en el mapa escalado
                     const spotRect = spot.getBoundingClientRect();
                     const wrapperRect = wrapper.getBoundingClientRect();
                     
-                    // Calculamos la distancia exacta para centrarlo horizontal y verticalmente
                     const destinoX = wrapper.scrollLeft + (spotRect.left - wrapperRect.left) - (wrapper.clientWidth / 2) + (spotRect.width / 2);
                     const destinoY = wrapper.scrollTop + (spotRect.top - wrapperRect.top) - (wrapper.clientHeight / 2) + (spotRect.height / 2);
                     
-                    // Desplazamos la pantalla de forma súper suave hasta el centro exacto
                     wrapper.scrollTo({
                         left: destinoX,
                         top: destinoY,
                         behavior: 'smooth'
                     });
                     
-                    // Hacemos que brille
                     spot.classList.add('destello');
                     setTimeout(() => spot.classList.remove('destello'), 3000);
                 }, 150);
