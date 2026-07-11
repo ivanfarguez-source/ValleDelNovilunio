@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>Valle del Novilunio - Botones Fijos</title>
+    <title>Valle del Novilunio - Navegación Libre</title>
     <style>
         html, body {
             margin: 0;
@@ -23,7 +23,9 @@
             overflow: auto; 
             display: block;
             background-color: #1a1510;
-            z-index: 1; /* Nivel base */
+            z-index: 1;
+            /* Suaviza el arrastre con el dedo en dispositivos iOS */
+            -webkit-overflow-scrolling: touch; 
         }
 
         /* Contenedor interno del mapa */
@@ -33,8 +35,9 @@
             height: auto;
             transform-origin: center center;
             transition: transform 0.1s ease-out; 
-            touch-action: none; 
-            z-index: 2; /* Por encima del fondo */
+            /* ¡CORREGIDO, CIELA! Permite arrastrar el mapa con los dedos en cualquier dirección */
+            touch-action: pan-x pan-y; 
+            z-index: 2;
         }
 
         .map-container img {
@@ -79,9 +82,9 @@
             100% { transform: translate(-50%, -50%) scale(1.4); }
         }
 
-        /* ¡INTERFAZ BLINDADA CON Z-INDEX MÁXIMO, CIELA! */
+        /* INTERFAZ FIJA */
         .leyenda-btn {
-            position: fixed; /* Flota sobre la pantalla global, no sobre el mapa */
+            position: fixed; 
             top: 15px;
             right: 15px;
             background: #2a221a;
@@ -93,19 +96,19 @@
             font-weight: bold;
             border-radius: 20px;
             cursor: pointer;
-            z-index: 9999 !important; /* Capa superior absoluta por encima de cualquier zoom */
+            z-index: 9999 !important; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
             -webkit-tap-highlight-color: transparent;
         }
 
         .side-controls {
-            position: fixed; /* Totalmente anclado a la pantalla */
+            position: fixed; 
             top: 70px;
             right: 15px;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            z-index: 9999 !important; /* Impide que el mapa al crecer tape los botones */
+            z-index: 9999 !important; 
         }
 
         .control-btn {
@@ -141,7 +144,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 10000; /* Por encima de los botones */
+            z-index: 10000; 
             opacity: 0;
             pointer-events: none; 
             transition: opacity 0.3s ease;
@@ -288,7 +291,7 @@
         let zoomOriginalAlTocar = 1.0;
         let estaPellizcando = false;
 
-        // ZOOM CON DOS DEDOS
+        // MANEJO TÁCTIL (ZOOM CON DOS DEDOS)
         wrapper.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
                 estaPellizcando = true;
@@ -301,6 +304,7 @@
         }, { passive: true });
 
         wrapper.addEventListener('touchmove', (e) => {
+            // Si el usuario usa un solo dedo, no hacemos nada aquí para dejar que el scroll nativo mueva el mapa libremente
             if (estaPellizcando && e.touches.length === 2) {
                 const nuevaDistancia = Math.hypot(
                     e.touches[0].pageX - e.touches[1].pageX,
@@ -318,8 +322,9 @@
                     const antiguoZoom = nivelZoom;
 
                     nivelZoom = nuevoZoom;
-                    contenedor.style.transform = `scale(${nivelZoom})`;
-                    contenedor.style.width = `${100 * nivelZoom}%`;
+                    
+                    // Aplicamos cambios de tamaño reales para que se pueda arrastrar
+                    aplicarEscalaMapa();
 
                     const factorRedimension = nivelZoom / antiguoZoom;
                     wrapper.scrollLeft = (centroX * factorRedimension) - (wrapper.clientWidth / 2);
@@ -332,7 +337,15 @@
             if (e.touches.length < 2) { estaPellizcando = false; }
         });
 
-        // BOTÓN ZOOM IN
+        // FUNCIÓN CENTRAL PARA APLICAR EL TAMAÑO
+        function aplicarEscalaMapa() {
+            contenedor.style.transform = `scale(${nivelZoom})`;
+            contenedor.style.width = `${100 * nivelZoom}%`;
+            // Forzamos al contenedor a ocupar altura real para permitir scroll vertical libre
+            contenedor.style.height = 'auto'; 
+        }
+
+        // BOTÓN ZOOM IN (+)
         function hacerZoomIn(valor) {
             if (nivelZoom >= maxZoom) return;
             const centroX = wrapper.scrollLeft + (wrapper.clientWidth / 2);
@@ -342,15 +355,14 @@
             nivelZoom += valor;
             if (nivelZoom > maxZoom) nivelZoom = maxZoom;
 
-            contenedor.style.transform = `scale(${nivelZoom})`;
-            contenedor.style.width = `${100 * nivelZoom}%`;
+            aplicarEscalaMapa();
 
             const factorRedimension = nivelZoom / antiguoZoom;
             wrapper.scrollLeft = (centroX * factorRedimension) - (wrapper.clientWidth / 2);
             wrapper.scrollTop = (centroY * factorRedimension) - (wrapper.clientHeight / 2);
         }
 
-        // BOTÓN RESTABLECER
+        // BOTÓN RESTABLECER (🔄)
         function restablecerVista() {
             nivelZoom = 1.0;
             contenedor.style.transform = `scale(1)`;
@@ -358,7 +370,7 @@
             wrapper.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
         }
 
-        // PANTALLA COMPLETA
+        // MODO INMERSIVO (📱)
         function alternarPantallaCompleta() {
             const doc = document.documentElement;
             const boton = document.getElementById('fullscreen-btn');
@@ -389,8 +401,7 @@
             
             if (nivelZoom === 1.0) {
                 nivelZoom = 1.6;
-                contenedor.style.transform = `scale(${nivelZoom})`;
-                contenedor.style.width = `${100 * nivelZoom}%`;
+                aplicarEscalaMapa();
             }
             
             const spot = document.getElementById(idSpot);
