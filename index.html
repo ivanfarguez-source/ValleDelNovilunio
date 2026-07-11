@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
-    <title>Valle del Novilunio - Pantalla Completa con Leyenda</title>
+    <title>Valle del Novilunio - Interactividad Total</title>
     <style>
         html, body {
             margin: 0;
@@ -21,7 +21,7 @@
             width: 100vw;
             height: 100vh;
             overflow: auto; 
-            display: block; /* Cambiado a block para facilitar el scroll automático */
+            display: block;
         }
 
         .map-wrapper img {
@@ -30,26 +30,32 @@
             display: block;
         }
 
-        /* Puntos interactivos invisibles por defecto */
+        /* PUNTOS INTERACTIVOS MEJORADOS */
         .hotspot {
             position: absolute;
             width: 6%;  
             height: 6%; 
             border-radius: 50%;
-            background: rgba(212, 178, 133, 0.4); 
-            border: 2px solid #fff;
+            background: rgba(212, 178, 133, 0); /* Totalmente invisible al principio */
+            border: 2px solid transparent;      /* Sin borde visible al principio */
             cursor: pointer;
             transform: translate(-50%, -50%); 
-            opacity: 0; 
-            transition: opacity 0.3s ease;
+            opacity: 1; /* Mantenemos la opacidad base alta */
+            transition: background 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent; 
-            z-index: 10;
+            z-index: 10; /* Asegura que estén SIEMPRE por encima de la imagen */
         }
 
-        /* EFECTO DESTELLO DORADO (Animación cuando se selecciona desde la lista) */
+        /* EFECTO HOVER: Al pasar el ratón por encima se ilumina suavemente */
+        .hotspot:hover {
+            background: rgba(212, 178, 133, 0.3); 
+            border-color: rgba(255, 255, 255, 0.7);
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        /* EFECTO DESTELLO DORADO (Cuando se selecciona desde la lista) */
         .hotspot.destello {
-            opacity: 1 !important;
             background: rgba(212, 178, 133, 0.6) !important;
             border-color: #d4b285 !important;
             box-shadow: 0 0 20px #d4b285, 0 0 40px #d4b285;
@@ -80,7 +86,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* PANTALLAS EMERGENTES (MODALES) */
+        /* PANTALLAS EMERGENTES CORREGIDAS (pointer-events: none evita que bloqueen el mapa) */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -92,11 +98,15 @@
             justify-content: center;
             align-items: center;
             z-index: 100;
+            
+            /* ¡ESTA ES LA CLAVE, REINA! */
             opacity: 0;
-            pointer-events: none;
+            pointer-events: none; /* Hace la capa invisible "fantasma" para que deje hacer clic abajo */
+            
             transition: opacity 0.3s ease;
         }
 
+        /* Al estar activa, la capa vuelve a recibir clics normalmente */
         .modal-overlay.active {
             opacity: 1;
             pointer-events: auto;
@@ -132,7 +142,6 @@
             padding-bottom: 8px;
         }
 
-        /* Contenedor de la lista con scroll independiente */
         .lista-lugares {
             overflow-y: auto;
             text-align: left;
@@ -158,7 +167,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        .lugar-item:active {
+        .lugar-item:active, .lugar-item:hover {
             background: rgba(212, 178, 133, 0.2);
             color: #fff;
         }
@@ -186,42 +195,33 @@
 </head>
 <body>
 
-    <!-- Botón flotante para abrir la Leyenda -->
     <button class="leyenda-btn" onclick="abrirLeyenda()">📜 Leyenda</button>
 
     <div class="map-wrapper" id="map-container">
-        <img src="MAPA.png" alt="Valle del Novilunio">
+        <img src="mapa.png" alt="Valle del Novilunio">
 
-        <!-- Agregamos IDs únicos a los hotspots para poder localizarlos desde el código -->
         <div id="spot-1" class="hotspot" style="left: 44.5%; top: 41.5%;" role="button" onclick="abrirPopUp('1. Plaza Mayor', 'El corazón del pueblo. Un lugar ideal para observar quién entra y sale.')"></div>
         <div id="spot-2" class="hotspot" style="left: 43.2%; top: 34.2%;" role="button" onclick="abrirPopUp('2. Ayuntamiento', 'El archivo municipal guarda documentos de 1996 que nadie quiere que salgan a la luz.')"></div>
         <div id="spot-3" class="hotspot" style="left: 35.5%; top: 32.5%;" role="button" onclick="abrirPopUp('3. Iglesia de Santa Ana', 'La vieja parroquia del pueblo. El párroco esconde algo bajo el altar...')"></div>
         <div id="spot-4" class="hotspot" style="left: 15.2%; top: 40.8%;" role="button" onclick="abrirPopUp('4. Instituto Sierra del Novilunio', 'Donde los jóvenes estudian y los secretos locales se heredan de clase en clase.')"></div>
     </div>
 
-    <!-- PANTALLA EMERGENTE 1: LA LEYENDA COMPLETA -->
-    <div class="modal-overlay" id="leyenda-overlay" onclick="cerrarLeyenda(event)">
+    <div class="modal-overlay" id="leyenda-overlay" onclick="document.getElementById('leyenda-overlay').classList.remove('active')">
         <div class="modal-box" onclick="event.stopPropagation()">
             <h2 class="modal-title">Lugares de Interés</h2>
             
             <div class="lista-lugares">
                 <div class="categoria-titulo">EDIFICIOS PÚBLICOS</div>
-                <!-- Al pulsar, llama a enfocarLugar(id_del_punto) -->
                 <div class="lugar-item" onclick="enfocarLugar('spot-1')">1. Plaza Mayor</div>
                 <div class="lugar-item" onclick="enfocarLugar('spot-2')">2. Ayuntamiento</div>
                 <div class="lugar-item" onclick="enfocarLugar('spot-3')">3. Iglesia de Santa Ana</div>
                 <div class="lugar-item" onclick="enfocarLugar('spot-4')">4. Instituto Sierra del Novilunio</div>
-                
-                <div class="categoria-titulo">VIVIENDAS</div>
-                <!-- Aquí irás listando tus viviendas poco a poco, ciela -->
-                <div class="lugar-item" onclick="alert('Próximamente configurado')">31. Casa de Daniel Romero</div>
             </div>
 
             <button class="close-btn" onclick="document.getElementById('leyenda-overlay').classList.remove('active')">Cerrar</button>
         </div>
     </div>
 
-    <!-- PANTALLA EMERGENTE 2: INFO DEL EDIFICIO -->
     <div class="modal-overlay" id="popup-overlay" onclick="document.getElementById('popup-overlay').classList.remove('active')">
         <div class="modal-box" onclick="event.stopPropagation()">
             <h2 class="modal-title" id="popup-titulo">Título</h2>
@@ -231,42 +231,27 @@
     </div>
 
     <script>
-        // Abre el menú de la leyenda
         function abrirLeyenda() {
             document.getElementById('leyenda-overlay').classList.add('active');
         }
 
-        // Cierra la leyenda si tocas fuera
-        function cerrarLeyenda(event) {
-            if (event.target === document.getElementById('leyenda-overlay')) {
-                document.getElementById('leyenda-overlay').classList.remove('active');
-            }
-        }
-
-        // Abre el pop-up informativo de cada edificio
         function abrirPopUp(titulo, descripcion) {
             document.getElementById('popup-titulo').innerText = titulo;
             document.getElementById('popup-descripcion').innerText = descripcion;
             document.getElementById('popup-overlay').classList.add('active');
         }
 
-        // Función mágica para buscar e iluminar el edificio desde la lista
         function enfocarLugar(idSpot) {
-            // 1. Cerramos el menú de la leyenda
             document.getElementById('leyenda-overlay').classList.remove('active');
             
-            // 2. Localizamos el circulito correspondiente
             const spot = document.getElementById(idSpot);
             const container = document.getElementById('map-container');
             
             if (spot && container) {
-                // 3. Hacemos scroll suave automático hasta la posición del edificio
                 spot.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
                 
-                // 4. Le añadimos la clase del destello dorado animado
                 spot.classList.add('destello');
                 
-                // 5. Quitamos el destello automáticamente a los 3 segundos
                 setTimeout(() => {
                     spot.classList.remove('destello');
                 }, 3000);
