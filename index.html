@@ -51,8 +51,8 @@
         /* PUNTOS INTERACTIVOS */
         .hotspot {
             position: absolute;
-            width: 6%;  
-            height: 6%; 
+            width: 3%;  
+            height: 5%; 
             border-radius: 50%;
             background: rgba(212, 178, 133, 0); 
             border: 2px solid transparent;      
@@ -248,12 +248,14 @@
 
     <div class="map-wrapper" id="map-wrapper">
         <div class="map-container" id="map-container">
-            <img src="mapa.png" alt="Valle del Novilunio">
+            <img src="mapa.jpeg" alt="Valle del Novilunio">
 
-            <div id="spot-1" class="hotspot" style="left: 44.5%; top: 41.5%;" role="button" onclick="abrirPopUp('1. Plaza Mayor', 'El corazón del pueblo. Un lugar ideal para observar quién entra y sale.')"></div>
-            <div id="spot-2" class="hotspot" style="left: 43.2%; top: 34.2%;" role="button" onclick="abrirPopUp('2. Ayuntamiento', 'El archivo municipal guarda documentos de 1996 que nadie quiere que salgan a la luz.')"></div>
-            <div id="spot-3" class="hotspot" style="left: 35.5%; top: 32.5%;" role="button" onclick="abrirPopUp('3. Iglesia de Santa Ana', 'La vieja parroquia del pueblo. El párroco esconde algo bajo el altar...')"></div>
-            <div id="spot-4" class="hotspot" style="left: 15.2%; top: 40.8%;" role="button" onclick="abrirPopUp('4. Instituto Sierra del Novilunio', 'Donde los jóvenes estudian y los secretos locales se heredan de clase en clase.')"></div>
+            <div id="spot-1" class="hotspot" style="left: 39.8%; top: 57.5%;" role="button" onclick="abrirPopUp('1. Plaza Mayor', 'El corazón del pueblo. Un lugar ideal para observar quién entra y sale.')"></div>
+            <div id="spot-2" class="hotspot" style="left: 40.2%; top: 47.2%;" role="button" onclick="abrirPopUp('2. Ayuntamiento', 'El archivo municipal guarda documentos de 1996 que nadie quiere que salgan a la luz.')"></div>
+            <div id="spot-3" class="hotspot" style="left: 46.5%; top: 34.5%;" role="button" onclick="abrirPopUp('3. Iglesia de Santa Ana', 'La vieja parroquia del pueblo. El párroco esconde algo bajo el altar...')"></div>
+            <div id="spot-4" class="hotspot" style="left: 15.2%; top: 48.8%;" role="button" onclick="abrirPopUp('4. Instituto Sierra del Novilunio', 'Donde los jóvenes estudian y los secretos locales se heredan de clase en clase.')"></div>
+			<div id="spot-5" class="hotspot" style="left: 21.2%; top: 53.8%;" role="button" onclick="abrirPopUp('5. Colegio Bellavista', 'Donde los jóvenes estudian y los secretos locales se heredan de clase en clase.')"></div>
+			<div id="spot-6" class="hotspot" style="left: 50.5%; top: 39.5%;" role="button" onclick="abrirPopUp('6. Plaza de la Iglesia', '')"></div>
         </div>
     </div>
 
@@ -266,6 +268,8 @@
                 <div class="lugar-item" onclick="enfocarLugar('spot-2')">2. Ayuntamiento</div>
                 <div class="lugar-item" onclick="enfocarLugar('spot-3')">3. Iglesia de Santa Ana</div>
                 <div class="lugar-item" onclick="enfocarLugar('spot-4')">4. Instituto Sierra del Novilunio</div>
+				<div class="lugar-item" onclick="enfocarLugar('spot-5')">4. Colegio Bellavista</div>
+				<div class="lugar-item" onclick="enfocarLugar('spot-6')">5. Plaza de la Iglesia</div>
             </div>
             <button class="close-btn" onclick="document.getElementById('leyenda-overlay').classList.remove('active')">Cerrar</button>
         </div>
